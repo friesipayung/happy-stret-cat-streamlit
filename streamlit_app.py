@@ -20,6 +20,8 @@ r = redis.Redis(
     ssl=True
 )
 
+ttl = os.environ.get('REDIS_TTL', 60*2)
+
 
 def get_feeders():
     url = "https://api.meow.camera/catHouses/top"
@@ -49,7 +51,7 @@ def check_redis(id):
 
 def save(id, d):
     r.set(id, str(d))
-    r.expire(id, 30)  # 30 seconds expire time
+    r.expire(id, ttl)  # 30 seconds expire time
 
 
 def get_feeder_data(id):
