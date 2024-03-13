@@ -6,3 +6,12 @@ Thanks to :
 - https://meow.camera/ for the data API
 - https://streetcat.wiki/ for the Information about Hello Street Cat Feeder
 - https://hellostreetcat.com/ for Feeder and Stream Data Camera
+
+## Demo URL 
+https://happy-stret-cat-app-test.streamlit.app/
+
+## Note
+- This is a personal project and not affiliated with Hello Street Cat or Meow Camera
+- This is for educational purposes only and not for commercial use
+- ANY USE OF THE SERVICES IS AT YOUR OWN RISK 
+
