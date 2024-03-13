@@ -1,40 +1,33 @@
-import altair as alt
-import numpy as np
-import pandas as pd
 import streamlit as st
+import ffmpeg
+from streamlit_player import st_player
 
-"""
-# Welcome to Streamlit!
+url = "https://streetcatpull.hellobike.com/live/4754408094082753545_0.m3u8"
+st_player(url, playing=True, loop=True, controls=True, volume=0.5)
+st.text(url)
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+# input = ffmpeg.input(url)
+# audio = input.audio.filter("aecho", 0.8, 0.9, 1000, 0.3)
+# video = input.video.hflip()
+# out = ffmpeg.output(audio, video, 'pipe')
+# out.run_async()
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+#
+# process1 = (
+#     ffmpeg
+#     .input(url)
+#     .output('pipe:', format='ismv', vcodec='copy')
+#     .run_async(pipe_stdout=True)
+# )
+#
+# while True:
+#     in_bytes = process1.stdout.read(32768)
+#     if not in_bytes:
+#         break
+#
+#     st.write(in_bytes)
+#
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
-
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
-
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+# process1.wait()

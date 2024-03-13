@@ -1,3 +1,5 @@
-altair
-pandas
+# altair
+# pandas
 streamlit
+# ffmpeg-python
+streamlit-player
