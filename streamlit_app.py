@@ -1,13 +1,23 @@
+import os
+
 import pandas as pd
 import streamlit as st
 import requests
 from multiprocessing import Pool
+import redis
 
 st.set_page_config(
     page_title="Happy Street Cat Data",
     page_icon="🐱",
     layout="wide",
     initial_sidebar_state="expanded",
+)
+
+r = redis.Redis(
+    host=os.environ.get('REDIS_HOST', 'localhost'),
+    port=os.environ.get('REDIS_PORT', 6379),
+    password=os.environ.get('REDIS_PASSWORD', None),
+    ssl=True
 )
 
 
@@ -29,12 +39,30 @@ def get_named_feeder():
         return None
 
 
+def check_redis(id):
+    d = r.get(id)
+    if d:
+        return d.decode('utf-8')
+    else:
+        return None
+
+
+def save(id, d):
+    r.set(id, str(d))
+    r.expire(id, 30)  # 30 seconds expire time
+
+
 def get_feeder_data(id):
+    d = check_redis(id)
+    if d:
+        return d
+
     url = "https://api.meow.camera/catHouse/{}".format(id)
     response = requests.get(url, timeout=30)
     if response.status_code == 200:
         d = response.json()
         d['catHouseId'] = id
+        save(id, d)
         return d
     else:
         return {}

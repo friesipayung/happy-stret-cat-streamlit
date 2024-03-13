@@ -4,3 +4,4 @@ streamlit
 # ffmpeg-python
 streamlit-player
 requests
+redis
