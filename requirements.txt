@@ -1,5 +1,6 @@
 # altair
-# pandas
+pandas
 streamlit
 # ffmpeg-python
 streamlit-player
+requests
