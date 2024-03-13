@@ -13,7 +13,7 @@ st.set_page_config(
 
 def get_feeders():
     url = "https://api.meow.camera/catHouses/top"
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
     if response.status_code == 200:
         return response.json()
     else:
@@ -22,7 +22,7 @@ def get_feeders():
 
 def get_named_feeder():
     url = "https://api.meow.camera/catHouses/named"
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
     if response.status_code == 200:
         return response.json()
     else:
@@ -31,13 +31,13 @@ def get_named_feeder():
 
 def get_feeder_data(id):
     url = "https://api.meow.camera/catHouse/{}".format(id)
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
     if response.status_code == 200:
         d = response.json()
         d['catHouseId'] = id
         return d
     else:
-        return None
+        return {}
 
 
 def get_all():
@@ -50,9 +50,10 @@ def get_all():
     fs = [dict(t) for t in {tuple(d.items()) for d in fs}]
 
     feeder_ids = [f['catHouseId'] for f in fs]
-    with Pool(99) as p:
-        for result in p.map(get_feeder_data, feeder_ids):
-            # print("result: ", result)
+
+    with Pool(4) as p:
+        for result in p.imap(get_feeder_data, feeder_ids):
+            print("result = ", result)
             for i, f in enumerate(fs):
                 if f['catHouseId'] == result['catHouseId']:
                     f['data'] = result
@@ -60,44 +61,38 @@ def get_all():
     return fs
 
 
-def main():
-    feeders = get_all()
+feeders = get_all()
 
-    datas = []
-    for feeder in feeders:
-        feeder_id = feeder.get('catHouseId', 0)
-        name = feeder.get('englishName', None)
-        if name is None:
-            name = feeder.get('data', {}).get('englishName', None)
-        data = {
-            "feeder_id": feeder_id,
-            "url": "https://meow.camera/viewer/#{}".format(feeder_id),
-            "name": name,
-            "original_name": feeder.get('name', '-'),
-            "cat": feeder.get('data', {}).get('catPresent', False),
-            "snack": feeder.get('data', {}).get('hasSnacks', False),
-        }
-        datas.append(data)
+datas = []
+for feeder in feeders:
+    feeder_id = feeder.get('catHouseId', 0)
+    name = feeder.get('englishName', None)
+    if name is None:
+        name = feeder.get('data', {}).get('englishName', None)
+    data = {
+        "feeder_id": feeder_id,
+        "url": "https://meow.camera/viewer/#{}".format(feeder_id),
+        "name": name,
+        "original_name": feeder.get('name', '-'),
+        "cat": feeder.get('data', {}).get('catPresent', False),
+        "snack": feeder.get('data', {}).get('hasSnacks', False),
+    }
+    datas.append(data)
 
-    data_df = pd.DataFrame(datas)
+data_df = pd.DataFrame(datas)
 
-    # sort by cat presence
-    data_df = data_df.sort_values(by='name', ascending=False)
+# sort by cat presence
+data_df = data_df.sort_values(by='name', ascending=False)
 
-    st.data_editor(
-        data_df,
-        column_config={
-            "url": st.column_config.LinkColumn(
-                "URL", display_text="Open video url"
-            ),
-        },
-        hide_index=True,
-        column_order=["name", "original_name", "cat", "snack", "url", "feeder_id"],
-        use_container_width=True,
-        height=800,
-    )
-
-
-main()
-
-st.button("Refresh", on_click=st.rerun())
+st.data_editor(
+    data_df,
+    column_config={
+        "url": st.column_config.LinkColumn(
+            "URL", display_text="Open video url"
+        ),
+    },
+    hide_index=True,
+    column_order=["name", "original_name", "cat", "snack", "url", "feeder_id"],
+    use_container_width=True,
+    height=800,
+)
