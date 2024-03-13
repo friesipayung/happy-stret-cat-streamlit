@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-from streamlit_player import st_player
 import requests
 from multiprocessing import Pool
 
@@ -34,7 +33,9 @@ def get_feeder_data(id):
     url = "https://api.meow.camera/catHouse/{}".format(id)
     response = requests.get(url)
     if response.status_code == 200:
-        return response.json()
+        d = response.json()
+        d['catHouseId'] = id
+        return d
     else:
         return None
 
@@ -49,45 +50,54 @@ def get_all():
     fs = [dict(t) for t in {tuple(d.items()) for d in fs}]
 
     feeder_ids = [f['catHouseId'] for f in fs]
-    with Pool(10) as p:
-        feeder_data = p.map(get_feeder_data, feeder_ids)
-    for i, f in enumerate(fs):
-        f['data'] = feeder_data[i]
+    with Pool(99) as p:
+        for result in p.map(get_feeder_data, feeder_ids):
+            # print("result: ", result)
+            for i, f in enumerate(fs):
+                if f['catHouseId'] == result['catHouseId']:
+                    f['data'] = result
 
     return fs
 
 
-feeders = get_all()
+def main():
+    feeders = get_all()
 
-datas = []
-for feeder in feeders:
-    feeder_id = feeder.get('catHouseId', 0)
-    name = feeder.get('englishName', None)
-    if name is None:
-        name = feeder.get('data', {}).get('englishName', None)
-    data = {
-        "feeder_id": feeder_id,
-        "url": "https://meow.camera/viewer/#{}".format(feeder_id),
-        "name": name,
-        "original_name": feeder.get('name', '-'),
-        "cat": feeder.get('data', {}).get('catPresent', False),
-        "snack": feeder.get('data', {}).get('hasSnacks', False),
-    }
-    datas.append(data)
+    datas = []
+    for feeder in feeders:
+        feeder_id = feeder.get('catHouseId', 0)
+        name = feeder.get('englishName', None)
+        if name is None:
+            name = feeder.get('data', {}).get('englishName', None)
+        data = {
+            "feeder_id": feeder_id,
+            "url": "https://meow.camera/viewer/#{}".format(feeder_id),
+            "name": name,
+            "original_name": feeder.get('name', '-'),
+            "cat": feeder.get('data', {}).get('catPresent', False),
+            "snack": feeder.get('data', {}).get('hasSnacks', False),
+        }
+        datas.append(data)
 
-data_df = pd.DataFrame(datas)
+    data_df = pd.DataFrame(datas)
 
-# sort by cat presence
-data_df = data_df.sort_values(by='cat', ascending=False)
+    # sort by cat presence
+    data_df = data_df.sort_values(by='name', ascending=False)
 
-st.data_editor(
-    data_df,
-    column_config={
-        "url": st.column_config.LinkColumn(
-            "URL", display_text="Open video url"
-        ),
-    },
-    hide_index=True,
-    column_order=["name", "original_name", "cat", "snack", "url", "feeder_id"],
-    use_container_width=True,
-)
+    st.data_editor(
+        data_df,
+        column_config={
+            "url": st.column_config.LinkColumn(
+                "URL", display_text="Open video url"
+            ),
+        },
+        hide_index=True,
+        column_order=["name", "original_name", "cat", "snack", "url", "feeder_id"],
+        use_container_width=True,
+        height=800,
+    )
+
+
+main()
+
+st.button("Refresh", on_click=st.rerun())
