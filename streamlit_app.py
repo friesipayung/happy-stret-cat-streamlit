@@ -1,5 +1,4 @@
 import streamlit as st
-import ffmpeg
 from streamlit_player import st_player
 
 url = "https://streetcatpull.hellobike.com/live/4754408094082753545_0.m3u8"
